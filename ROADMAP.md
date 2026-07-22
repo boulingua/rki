@@ -1,0 +1,113 @@
+# RKI — Russian course roadmap
+
+> Русский как иностранный. Building the entire boulingua Russian course — content and website — from an empty scaffold to a live course on the world map. This roadmap is the working plan; it conforms to the `pagegen` template standard, the `curriculum` framework, and the binding VG Wort standard.
+
+## 1. Overview
+
+**What this is.** A free, openly-licensed Russian-as-a-foreign-language course (code `rki`, signature accent `#198D5B` / dark `#7EE7B9`) for the German *Gesamtschule* system and independent adult learners, published as a static Hugo site (hugo-coder) with committed materials and audio, following the boulingua five-step unit model (Activate → Input → Practise → Apply → Reflect).
+
+**Target learners.** German-L1 (and English-comfortable) absolute beginners with no prior Cyrillic; secondary-school pupils and self-studiers who want structured, exam-backed progression with printable worksheets and native-voice audio.
+
+**Realistic CEFR scope.** **A1 → B2**, preceded by a **Level 0 Cyrillic/script onboarding** stage. C1/C2 are explicitly out of scope for this instantiation (free material rarely reaches them honestly). Pre-A1 (CEFR "preA1") descriptors are folded into Level 0 + early A1 where official descriptors exist.
+
+**The 3–5 defining challenges (drive every decision below):**
+1. **Cyrillic script.** Learners cannot read anything on day one. Onboarding the alphabet (33 letters, print vs. italic/cursive forms, handwriting) is a prerequisite gate, not an afterthought — hence Level 0.
+2. **Six-case system + gender/animacy.** Russian nominal morphology (6 cases × 3 genders × number, plus animacy) is the dominant grammar load and must be spiralled across A1–B2, not front-loaded.
+3. **Verbal aspect.** The imperfective/perfective distinction pervades every tense and has no clean German/English analogue; it needs its own recurring treatment.
+4. **Free stress + vowel reduction.** Stress is lexical, mobile, and unmarked in normal orthography but changes pronunciation (о→[а], е→[и]). The course must **mark stress** (аку́т) in all teaching text and reflect reduction in audio.
+5. **Font + TTS coverage.** Every layer (web font, slide/worksheet LaTeX, TTS) must fully cover Cyrillic including the stress-accent combining diacritic and the letter ё.
+
+## 2. Language & localisation decisions
+
+Each decision is opinionated with a recommendation.
+
+- **Writing system.** Teach in **Cyrillic from Level 0**; use romanization (a light scientific/ISO-9-flavoured transliteration) **only** as a temporary scaffold inside Level 0 and the first A1 units, then drop it. Decision: **Cyrillic-first, transliteration as a fading crutch, gone by A1 end.**
+- **Stress marking.** Mark stress with the combining acute (U+0301) on every multisyllabic teaching word in units, worksheets and slides (e.g. `хорошо́`). Keep ё written as ё (never е) in all teaching text. Decision: **stress marks and explicit ё everywhere in didactic text**; drop stress marks only in "authentic-text" reading tasks at B1+ to build real-world reading.
+- **Variant/dialect.** **Standard (Moscow) Russian**, contemporary neutral register. No regional or heritage variants. Decision: **standard literary Russian, neutral register.**
+- **RTL.** Not applicable — Cyrillic is LTR. No bidi handling needed.
+- **Web font (Cyrillic coverage).** The template body font is **Source Sans 3**, which ships a full Cyrillic subset and renders the combining acute acceptably; the mono font is JetBrains Mono (Cyrillic-capable). Decision: **keep the template fonts** (Source Sans 3 / JetBrains Mono), self-hosted, and add an explicit visual QA of ё + combining-acute rendering in both themes. No custom font needed.
+- **Native-voice / Piper TTS.** Piper has redistributable Russian voices in `rhasspy/piper-voices` (e.g. `ru_RU-irina-medium`, `ru_RU-denis-medium`, `ru_RU-dmitri-medium`, `ru_RU-ruslan-medium`). Decision: **primary `ru_RU-irina-medium`, second voice `ru_RU-denis-medium`** for alternating dialogue speakers; register the pair in `audiogen`'s voice table (`Russian | ru_RU-irina-medium / ru_RU-denis-medium | rki`). Caveat: Piper does not read the U+0301 accent as a stress signal — **strip combining accents from the TTS input string** (keep ё) so pronunciation is correct, and rely on the model's own lexical stress; spot-check reduction and stress on a sample and hand-fix segment text where wrong.
+- **Level-0 script onboarding.** A dedicated **`content/level-0/`** section (page_type: section) with letter-group units, handwriting/cursive notes, keyboard layout (ЙЦУКЕН) guidance, and a reading-readiness check. Decision: **Level 0 is a first-class section and a hard prerequisite** surfaced in the menu before A1.
+
+## 3. Instantiation from pagegen
+
+Stand up the buildable site first; author content second.
+
+1. **Copy the template.** Copy `pagegen/` into `rki/`, preserving `LICENSE`, `README.md`, and the existing `brand/` icons already present in `rki/`. Bring over `hugo.toml`, `go.mod`, `layouts/`, `assets/`, `data/`, `scripts/`, `archetypes/`, `content/` skeleton, `.github/workflows/build-deploy.yml`, and the three legal pages.
+2. **Edit only the marked `hugo.toml` values (S):**
+   - `baseURL = "https://boulingua.github.io/rki/"`
+   - `title = "Русский — RKI — S. Le Boulanger"`
+   - `languageCode = "ru"`, `defaultContentLanguage = "ru"` (UI chrome stays bilingual DE/EN as the sister sites; content language is Russian)
+   - `params.navTitle = "RKI"`, `description`/`keywords` for Russian
+   - `params.code = "rki"` (this selects the accent — do **not** edit CSS)
+   - `params.plausible.domain = "boulingua.github.io/rki"`
+   - `[[params.social]]` url → `https://github.com/boulingua/rki`
+   - `[[menu.main]]` sections → Level 0, A1, A2, B1, B2, Materials, About, Legal
+3. **Confirm accent.** `data/accents.yaml` already carries `rki` (accent `#198D5B`, hover `#126642`, dark `#7EE7B9`) — verified present. No change needed.
+4. **Regenerate brand.** Run `python brand/make_icon.py` to regenerate the pentagon mark + favicons from the `rki` accent (icons exist but re-run to guarantee they derive from the current accent pipeline).
+5. **Fill legal `⟨…⟩` placeholders** in `impressum.md` / `datenschutz.md` / `haftungsausschluss.md`, including the VG Wort METIS disclosure in Datenschutz.
+6. **First green build.** `hugo --minify --gc` locally; verify the gate battery (`scripts/`) passes on an empty-content build; enable **GitHub Pages** via the `build-deploy.yml` workflow (`github-pages` environment). Definition of this milestone: an empty but themed Russian site deploys green.
+
+## 4. Curriculum conformance target
+
+- **Declared level: `core` (A1–B1), with a partial `full` extension into B2.** `core` requires every **in-scope** scale that has an official A1/A2/B1 descriptor to be implemented; B2 will be implemented for the high-frequency scales (reception, production, spoken/written interaction, core linguistic/pragmatic) and **declared as a gap** for the thin scales (much of mediation, all plurilingual) rather than faked.
+- **In-scope scales** are the closed set in `curriculum/schema/scale-registry.yml` (REC 13, PROD 12, INT 18, MED 20, PLUR 3, LING 6, SOC 1, PRAG 6; SIGN out of scope, no IDs). For every (LEVEL, SCALE) cell with no CV descriptor, record **`no-official-descriptor`** — absence is never a failure, a silently missing scale is.
+- **Mapping plan.** Each unit's front matter uses the `curriculum` block with `framework: cefr`, a `cefr_level`, and `cefr_can_do` statements; each can-do resolves to a descriptor ID `{LEVEL}.{DOMAIN}.{SCALE}.{SEQ}` per `curriculum/docs/id-scheme.md`. Every realization carries a resolvable `implements:` reference to a statement in `curriculum/levels/*.md`.
+- **Machine-readable scope/coverage manifest.** Publish `rki/conformance.yml` (modelled on `curriculum/examples/de-a1/`) declaring `framework_version`, `language: ru`, `declared_conformance: core`, and the per-scale × per-level matrix (implemented ID vs `no-official-descriptor`). It must pass **`curriculum/scripts/id-audit.sh`** (format, global uniqueness, every `implements:` resolves). Add running `id-audit.sh` against `rki/conformance.yml` to CI once curriculum is a build dependency.
+- **Level 0** maps to `preA1` descriptors where they exist (a handful of REC/INT scales) plus non-CEFR script-literacy objectives recorded as course-local (not CEFR-claimed).
+
+## 5. Content creation plan
+
+Phased by level; effort tags **S / M / L**. Recurring cast and theme thread all levels for continuity: **a student, Аня, arriving in a Russian-speaking city — flatmates, university, work, travel** — so vocabulary and situations recur and spiral.
+
+**Per-level unit counts and acceptance criteria:**
+
+- **Level 0 — Cyrillic onboarding (M).** ~5 units: (1) vowels + easy consonants, (2) "false-friend" letters (В Н Р С У Х), (3) remaining consonants + ь/ъ, (4) print↔cursive/italic + handwriting, (5) reading fluency + keyboard. Plus a script-readiness check (exam-style). *Accept:* a learner can decode any Russian word aloud, type Cyrillic, and knows all 33 letters + ё.
+- **A1 (L).** ~10 units. Greetings/introductions, gender & number, present tense, nominative + accusative + prepositional, personal pronouns, numbers/time, family, food/shopping, home, daily routine. Introduce aspect *lexically* (не delve). *Accept:* every in-scope A1 scale with a descriptor is mapped; audio + worksheet + slides committed; A1 exam bundle present.
+- **A2 (L).** ~10 units. Past tense + aspect proper, genitive + dative + instrumental (full six-case survey), verbs of motion (intro), possessives, comparatives, directions, health, travel, weather. *Accept:* all six cases covered receptively/productively; aspect pairs taught; A2 exam.
+- **B1 (L).** ~12 units. Verbs of motion with prefixes, conditional/subjunctive, participles (recognition), reported speech, complex sentences, work/education, media, opinions, culture. *Accept:* `core` conformance closes here — every in-scope A1–B1 descriptor implemented or `no-official-descriptor`; B1 exam.
+- **B2 (M, partial).** ~10 units. Aspect nuance, participles/gerunds (production), abstract topics, register, argumentation, longer authentic reading (stress marks dropped). *Accept:* B2 implemented for high-frequency scales, gaps declared in `conformance.yml`; B2 exam.
+
+**Exams** are first-class sibling bundles (`…-exam/index.md`, `page_type: exam`, shared `unit_nr`), one per level minimum (plus optional per-unit quizzes), with `duration_min`, `total_points`, `notenschluessel`, and a PDF under `static/downloads/<level>/`.
+
+**Appendices (M):** Cyrillic + cursive chart; full case-ending tables (nouns/adjectives/pronouns); aspect-pair glossary; verbs-of-motion table; stress/reduction guide; A1–B2 thematic glossary; common German-L1 error list; assessment grid. Each ≥1800 chars carries a VG Wort mark.
+
+## 6. Website & materials
+
+- **Section landings** (`_index.md`, `page_type: section`) rendered via **shortcodes only** (never raw HTML) — one per Level 0/A1/A2/B1/B2 and the Materials hub.
+- **Materials pipeline.** Slide decks from **slidegen** (Beamer/XeLaTeX) and worksheets from **sheetgen** (XeLaTeX), both compiled locally (twice, for the TikZ watermark) and **committed** under `static/materials/` + `static/downloads/`; CI only verifies presence + attribution (no TeX Live in the deploy path). Confirm the bundled Source Sans 3 renders Cyrillic + the stress accent in XeLaTeX (fontspec); if the combining acute mis-renders in LaTeX, precompose stressed vowels or add a Cyrillic-complete fallback in the template `fonts/`.
+- **Audio.** Via **audiogen** / Piper (`ru_RU-irina-medium` + `ru_RU-denis-medium`), OGG/Opus 48 kbit/s mono, committed under `static/materials/audio/<unit>/`, manifest in `data/audio/<unit>.json`, rendered as accessible `<audio>` players with visible transcripts. **TTS input must strip U+0301 accents, keep ё**; spot-check stress/reduction and hand-fix segment text.
+- **Thumbnails** generated by `scripts/render_thumbs.py`; **downloads** verified present + attributed by `scripts/verify_downloads.py`.
+
+## 7. VG Wort — pixel assignment for ALL content pages (required)
+
+Non-negotiable, per `pagegen/docs/vgwort-standard.md`. **Every** creative content page ≥1800 rendered characters gets exactly **one** VG Wort Zählmarke on exactly **one** URL: every unit, every exam, every appendix, and long-form editorial pages (About / course overview / Level-0 intro prose). **Never** on navigation (home, `/materials/`, tag/category indexes), paginated continuations, or the templated legal pages.
+
+**Process for each work:**
+1. Draw fresh **public** codes (32-hex) from the author's VG Wort **T.O.M.** account — never invent, never reuse a code already assigned, never expose the private code.
+2. Register each in `data/vgwort.yaml` keyed by `url:` or `path:`, with `public_id`, `pixel_url` (`https://vg09.met.vgwort.de/na/<code>`), `min_chars: 1800`, `author`, `registered_at`.
+3. Rendering goes through the single resolver partial `layouts/_partials/vgwort/url.html` → `<head>` preload + eager off-screen `<img>` in body (no JS, no consent gate, `loading="eager"`, `visibility:hidden`/off-screen never `display:none`).
+4. Record every code in the **private usage registry** (§8 of the standard) — kept outside the repo — mapping code → Projekt `rki` / Sprache Russian / Niveau / URL.
+5. Verified by CI: coverage audit (warning), render verify (blocking, page-level uniqueness), hub guard (blocking — `met.vgwort.de` absent from the materials hub). Exclude `vgwort.de` from link-checkers.
+
+**Estimated total marks needed:** units ≈ 5 (L0) + 10 (A1) + 10 (A2) + 12 (B1) + 10 (B2) = **47**; exams ≈ **6** (one per level + L0 readiness); appendices ≈ **8**; editorial (About, section intros ≥1800 chars) ≈ **4–6**. **≈ 65–67 Zählmarken total** — draw ~70 codes from T.O.M. to leave headroom.
+
+## 8. Milestones & sequencing
+
+1. **M0 — Scaffold live (S).** §3 done: themed empty Russian site deploys green to GitHub Pages. *Dep:* none.
+2. **M1 — MVP: Level 0 live (M).** 5 Cyrillic units + readiness check + Level-0 slides/worksheets/audio + their VG Wort marks + `conformance.yml` skeleton passing `id-audit.sh`. *Dep:* M0, audiogen Russian voice registered, LaTeX Cyrillic QA. **First public value.**
+3. **M2 — A1 complete (L).** 10 units + A1 exam + appendices started; A1 in-scope descriptors mapped. *Dep:* M1.
+4. **M3 — A2 complete (L).** Six-case + aspect fully covered; A2 exam. *Dep:* M2.
+5. **M4 — B1 complete → `core` conformance met (L).** Every in-scope A1–B1 descriptor implemented or `no-official-descriptor`; B1 exam; appendices complete. *Dep:* M3.
+6. **M5 — B2 partial + polish (M).** B2 units + exam; declared B2 gaps in `conformance.yml`; full audio/materials pass; a11y + Cyrillic-rendering QA in both themes.
+
+**Definition of "done / ready to flip from coming-soon to active on the world map":** Level 0 + A1 fully live (units, exams, worksheets, slides, native-voice audio all committed and rendering), every published editorial page ≥1800 chars carries a registered, render-verified VG Wort mark (coverage audit shows 0 unregistered), `conformance.yml` passes `id-audit.sh` with an honestly declared level, all CI gates green, legal placeholders filled, and the site deploys to GitHub Pages. Practically: **flip at end of M2 (A1 live)**; continue A2–B2 as ongoing releases.
+
+## 9. Open decisions & risks (language-specific)
+
+- **Stress-accent rendering.** The U+0301 combining acute must render correctly in Source Sans 3 (web, both themes) **and** XeLaTeX (slides/worksheets). *Risk:* dotted/clipped glyphs. *Mitigation:* early rendering QA on ё + stressed vowels; precompose or fallback-font if needed.
+- **Piper stress accuracy.** TTS may mis-stress low-frequency words even with accents stripped. *Mitigation:* per-segment listening QA; hand-edit segment text (respell) where wrong; accept as a known limitation of free TTS, documented on the audio page.
+- **Transliteration fade-out.** Deciding exactly when romanization disappears (end of Level 0 vs mid-A1) affects learner comfort vs. immersion. *Decision pending pilot;* default: gone by A1 end.
+- **Cyrillic keyboard guidance.** How much to teach ЙЦУКЕН vs. phonetic layouts for German-keyboard learners. *Default:* show both, recommend the OS phonetic layout for beginners.
+- **Bildungsplan vs CEFR framing.** Whether to also emit `framework: bildungsplan-bw` codes for the Gesamtschule audience (as EFL/FLE do) or stay CEFR-only. *Default:* CEFR-only (like DaF); revisit if a Baden-Württemberg Russian syllabus mapping is requested.
+- **Mediation/plurilingual thinness.** These scales are hard to source freely for Russian. *Decision:* declare gaps honestly in `conformance.yml` rather than pad — per the framework's "declare the gap" principle.
